@@ -9,8 +9,7 @@
                         <div class="card-tools">
                             <button
                                 class="btn btn-success"
-                                data-toggle="modal"
-                                data-target="#adduser"
+                                @click="newUserModal()"
                             >
                                 Add User
                                 <i class="fas fa-user-plus fa-fw"></i>
@@ -39,7 +38,10 @@
                                     <td>{{ user.type | upText }}</td>
                                     <td>{{ user.created_at | myDate }}</td>
                                     <td>
-                                        <a href="#">
+                                        <a
+                                            href="#"
+                                            @click="editUserModal(user)"
+                                        >
                                             <i class="fas fa-edit blue"></i>
                                         </a>
                                         /
@@ -63,7 +65,7 @@
         <!-- Modal -->
         <div
             class="modal fade"
-            id="adduser"
+            id="userModal"
             tabindex="-1"
             aria-labelledby="adduserLabel"
             aria-hidden="true"
@@ -71,7 +73,20 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="adduserLabel">Add User</h5>
+                        <h5
+                            class="modal-title"
+                            v-show="editMode"
+                            id="adduserLabel"
+                        >
+                            Update User
+                        </h5>
+                        <h5
+                            class="modal-title"
+                            v-show="!editMode"
+                            id="adduserLabel"
+                        >
+                            Add User
+                        </h5>
                         <button
                             type="button"
                             class="close"
@@ -81,7 +96,9 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form @submit.prevent="createUser">
+                    <form
+                        @submit.prevent="editMode ? updateUser() : createUser()"
+                    >
                         <div class="modal-body">
                             <!--Username-->
                             <div class="form-group">
@@ -183,7 +200,18 @@
                                 Close
                             </button>
 
-                            <button type="submit" class="btn btn-primary">
+                            <button
+                                type="submit"
+                                v-show="editMode"
+                                class="btn btn-success"
+                            >
+                                Update
+                            </button>
+                            <button
+                                type="submit"
+                                v-show="!editMode"
+                                class="btn btn-primary"
+                            >
                                 Create
                             </button>
                         </div>
@@ -201,17 +229,34 @@ export default {
             users: {},
             // Create a new form instance
             form: new Form({
+                id: "",
                 name: "",
                 email: "",
                 password: "",
                 type: "",
                 bio: "",
                 photo: ""
-            })
+            }),
+            editMode: false
         };
     },
 
     methods: {
+        newUserModal() {
+            this.editMode = false;
+            this.form.reset();
+            this.form.clear();
+            $("#userModal").modal("show");
+        },
+
+        editUserModal(data) {
+            this.editMode = true;
+            this.form.reset();
+            this.form.clear();
+            $("#userModal").modal("show");
+            this.form.fill(data);
+        },
+
         displayUsers() {
             axios.get("api/user").then(({ data }) => (this.users = data));
         },
@@ -222,15 +267,16 @@ export default {
                 .post("api/user")
                 .then(() => {
                     Fire.$emit("LoadData");
-                    $("#adduser").modal("hide");
+                    $("#userModal").modal("hide");
                     toast.fire({
                         icon: "success",
                         title: "User created successfully"
                     });
-
                     this.$Progress.finish();
                 })
-                .catch(() => {});
+                .catch(() => {
+                    this.$Progress.fail();
+                });
         },
 
         deleteUser(id) {
@@ -264,6 +310,25 @@ export default {
                         });
                 }
             });
+        },
+
+        updateUser() {
+            this.$Progress.start();
+            this.form
+                .put("api/user/" + this.form.id)
+                .then(() => {
+                    $("#userModal").modal("hide");
+                    swal.fire(
+                        "Updated!",
+                        "User informatiom has been updated.",
+                        "success"
+                    );
+                    Fire.$emit("LoadData");
+                    this.$Progress.finish();
+                })
+                .catch(() => {
+                    this.$Progress.fail();
+                });
         }
     },
 
