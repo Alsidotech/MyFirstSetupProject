@@ -8,3 +8,8 @@
 @import '~bootstrap/scss/bootstrap';
 @import '~admin-lte/dist/css/adminlte.css';
 @import '~admin-lte/plugins/fontawesome-free/fontawesome-free-5.14.0-web/css/all.css';
+
+.router-link-exact-active {
+    background-color: rgb(0, 123, 255);
+    color: #ffffff !important;
+}
